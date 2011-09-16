@@ -6,10 +6,11 @@
  @param excelFile 	 Excel file to parse. (Required)
  @return Returns a struct of arrays.
  @author anthony petruzzi (tpetruzzi@gmail.com)
- @version 1, Sep 13, 2011
+ @version 2, Sep 15, 2011
  http://gist.github.com/138954
 
  handle blank and duplicate headers
+ handle dates
 --->
 <cffunction name="parseExcel" access="public" returntype="any" output="false">
 	<cfargument name="excelFile" type="string" required="true">
@@ -23,6 +24,8 @@
 	<cfset loc.io = CreateObject("java","java.io.FileInputStream").init(excelFile)>
 	<!--- read the excel file --->
 	<cfset loc.workbook = CreateObject("java","org.apache.poi.hssf.usermodel.HSSFWorkbook").init(loc.io)>
+	<!--- need to convert dates --->
+	<cfset loc.dateUtil = CreateObject("java","org.apache.poi.hssf.usermodel.HSSFDateUtil").init()>
 	<!--- get the first sheet of the workbook. zero indexed --->
 	<cfset loc.workSheet = loc.workBook.getSheetAt(javacast("int", 0))>
 	<!--- get the number of rows the sheet has. zero indexed --->
@@ -70,6 +73,10 @@
 					<cfif structkeyexists(loc, "celltype")>
 						<cfif loc.cellType.getCellType() eq 0>
 							<cfset loc.value = loc.cellType.getNumericCellValue()>
+							<!--- see if this is a date --->
+							<cfif loc.dateUtil.isCellDateFormatted(loc.cellType)>
+								<cfset loc.value = loc.dateUtil.getJavaDate(loc.value)>
+							</cfif>
 						<cfelse>
 							<cfset loc.value = loc.cellType.getStringCellValue()>
 						</cfif>
