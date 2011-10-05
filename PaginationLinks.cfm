@@ -59,7 +59,7 @@
 	<cfset StructAppend(loc.scope, url, true)>
 	
 	<cfif StructKeyExists(loc.scope, arguments.param)>
-		<cfset loc.currentPage = loc.scope[arguments.param]>
+		<cfset loc.currentPage = int(val(loc.scope[arguments.param]))>
 		<cfif loc.currentPage lt 1>
 			<cfset loc.currentPage = 1>
 		<cfelseif loc.currentpage gt loc.totalPages>
