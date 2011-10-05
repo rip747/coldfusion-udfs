@@ -27,7 +27,7 @@
 	<cfset loc.currentPage = 1>
 	
 	<!--- number of pages total --->
-	<cfset loc.totalPages = ceiling(arguments.totalRecords / arguments.perPage)>
+	<cfset loc.totalPages = Ceiling(arguments.totalRecords / arguments.perPage)>
 	
 	<cfif not arguments.showSinglePage and loc.totalPages eq 1>
 		<cfreturn loc.returnValue>
@@ -42,13 +42,20 @@
 			<cfset ArrayDeleteAt(loc.queryString, loc.i)>
 		</cfif>
 	</cfloop>
-
 	<cfset loc.queryString = ArrayToList(loc.queryString, "&")>
 	
-	<!--- divider --->
-	<cfset arguments.anchorDivider = '<span class="#arguments.classForDivider#">#arguments.anchorDivider#</span>'>
+	<!--- anchor divider --->
+	<cfset loc.temp = ['<span class="#arguments.classForDivider#">#arguments.anchorDivider#</span>']>
+	<cfif arguments.prependOnAnchor and Len(arguments.prependToPage)>
+		<cfset ArrayPrepend(loc.temp, arguments.prependToPage)>
+	</cfif>
+	<cfif arguments.appendOnAnchor and Len(arguments.appendToPage)>
+		<cfset ArrayAppend(loc.temp, arguments.appendToPage)>
+	</cfif>
+	<cfset arguments.anchorDivider = ArrayToList(loc.temp, "")>
 	
-	<cfset loc.scope = duplicate(form)>
+	<!--- get what page we're on --->
+	<cfset loc.scope = Duplicate(form)>
 	<cfset StructAppend(loc.scope, url, true)>
 	
 	<cfif StructKeyExists(loc.scope, arguments.param)>
@@ -60,10 +67,15 @@
 		</cfif>
 	</cfif>	
 
+	<!--- build the pagination links --->
 	<cfset loc.holder = []>
 	
 	<!--- determine the radius --->
-	<cfset loc.radius = fix(arguments.windowSize / 2)>
+	<cfif BitAnd(arguments.windowSize, 0)>
+		<cfset loc.radius = Ceiling(arguments.windowSize / 2)>
+	<cfelse>
+		<cfset loc.radius = Fix(arguments.windowSize / 2)>
+	</cfif>
 	<cfset loc.startPos = loc.currentPage - loc.radius>
 	<cfset loc.endPos = loc.currentPage + loc.radius>
 
@@ -87,7 +99,7 @@
 		<cfset loc.endPos = loc.totalPages>
 	</cfif>
 
-	<cfif loc.startPos eq loc.endPos>
+	<cfif loc.startPos eq loc.endPos AND not arguments.showSinglePage>
 		<cfreturn loc.returnValue>
 	</cfif>
 
@@ -115,31 +127,39 @@
 	<cfset loc.counter = ArrayLen(loc.holder)>
 	<cfloop from="1" to="#loc.counter#" index="loc.i">
 		<cfif IsNumeric(loc.holder[loc.i])>
-			<cfset loc.str = ["<span"]>
+			<cfset loc.temp = ["<span"]>
 			<cfif loc.currentPage eq loc.holder[loc.i] AND Len(arguments.classForCurrent)>
-				<cfset arrayAppend(loc.str, ' class="#arguments.classForCurrent#"')>
+				<cfset ArrayAppend(loc.temp, ' class="#arguments.classForCurrent#"')>
 			</cfif>
-			<cfset arrayAppend(loc.str, '>#loc.holder[loc.i]#</span>')>
+			<cfset ArrayAppend(loc.temp, '>#loc.holder[loc.i]#</span>')>
 			<cfif loc.currentPage neq loc.holder[loc.i] OR arguments.linkToCurrentPage>
-				<cfset arrayPrepend(loc.str, '<a href="#arguments.anchor#?#arguments.param#=#loc.holder[loc.i]#&#loc.queryString#">')>
-				<cfset arrayAppend(loc.str, '</a>')>
+				<cfset ArrayPrepend(loc.temp, '<a href="#arguments.anchor#?#arguments.param#=#loc.holder[loc.i]#&#loc.queryString#">')>
+				<cfset ArrayAppend(loc.temp, '</a>')>
 			</cfif>
-			<cfif Len(arguments.prependToPage)>
-				<cfset arrayPrepend(loc.str, arguments.prependToPage)>
+			<cfif (loc.i eq 1 AND Len(arguments.prependToPage) AND arguments.prependOnFirst) OR loc.i gt 1>
+				<cfset ArrayPrepend(loc.temp, arguments.prependToPage)>
 			</cfif>
-			<cfif (Len(arguments.appendToPage))>
-				<cfset arrayAppend(loc.str, arguments.appendToPage)>
+			<cfif (loc.i eq loc.counter AND Len(arguments.appendToPage) AND arguments.appendOnLast) OR loc.i lt loc.counter>
+				<cfset ArrayAppend(loc.temp, arguments.appendToPage)>
 			</cfif>
-			<cfset loc.holder[loc.i] = ArrayToList(loc.str, "")>
+			<cfset loc.holder[loc.i] = ArrayToList(loc.temp, "")>
 		</cfif>
 	</cfloop>
 	
- 	<cfset arrayPrepend(loc.holder, '<span')>
-	<cfif len(arguments.classForContainer)>
-		<cfset loc.holder[1] &= ' class="#arguments.classForContainer#"'>
+	<cfif Len(arguments.prepend)>
+		<cfset ArrayPrepend(loc.holder, arguments.prepend)>
 	</cfif>
-	<cfset loc.holder[1] &= '>'>
-	<cfset arrayAppend(loc.holder, '</span>')>
+	<cfif Len(arguments.append)>
+		<cfset ArrayAppend(loc.holder, arguments.append)>
+	</cfif>
+	
+	<cfset loc.temp = ['<span']>
+	<cfif Len(arguments.classForContainer)>
+		<cfset ArrayAppend(loc.temp, ' class="#arguments.classForContainer#"')>
+	</cfif>
+	<cfset ArrayAppend(loc.temp, '>')>
+	<cfset ArrayPrepend(loc.holder, ArrayToList(loc.temp, ""))>
+	<cfset ArrayAppend(loc.holder, '</span>')>
 	<cfset loc.returnValue = ArrayToList(loc.holder, "")>
 	<cfreturn loc.returnValue>
 </cffunction>
