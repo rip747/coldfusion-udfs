@@ -109,9 +109,7 @@
 			replace spaces with underscores
 			upper case them so they look pretty ;)
 			--->
-			<cfset loc.key = ReReplaceNoCase(loc.key, "[^A-Za-z0-9 ]", "", "ALL")>
-			<cfset loc.key = trim(loc.key)>
-			<cfset loc.key = Replace(loc.key, " ", "_", "ALL")>
+			<cfset loc.key = ReReplaceNoCase(loc.key, "[^A-Za-z0-9_]", "", "ALL")>
 			<cfif !len(loc.key)>
 				<cfset loc.key = "BLANK_HEADER_#loc.headerCounter#">
 				<cfset loc.headerCounter++>
